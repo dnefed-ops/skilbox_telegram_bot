@@ -1,2 +1,6 @@
-pyTelegramBotApi==4.29.1
+pyTelegramBotApi==4.30.0
 python-dotenv==1.2.1
+peewee==3.18.3
+requests==2.32.5
+geopy==2.4.1
+rapidfuzz==3.14.3

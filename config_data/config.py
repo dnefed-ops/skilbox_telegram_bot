@@ -11,5 +11,6 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 DEFAULT_COMMANDS = (
     ('start', 'Запустить бота'),
-    ('help', 'Вывести справку')
+    ('help', 'Вывести справку'),
+    ('weather', 'Узнать погоду в любом городе.')
 )
