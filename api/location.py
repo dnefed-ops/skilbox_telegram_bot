@@ -52,6 +52,3 @@ def get_location(city: str) -> Optional[List[float]]:
     except Exception as exc:
         print(f"❌ Ошибка: {exc}")
         return None
-
-test = get_location('Мекха')
-print(test)

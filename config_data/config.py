@@ -1,14 +1,18 @@
 import os
-from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
+from dotenv import load_dotenv
 
 
-if not find_dotenv():
+BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / '.env'
+
+if not env_path.exists():
     exit('Переменные окружения не загружены т.к. отсутствует файл .env')
-else:
-    load_dotenv()
+
+load_dotenv(env_path)
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-RAPID_API_KEY = os.getenv('RAPID_API_KEY')
+TRAVELPAYOUTS_TOKEN = os.getenv('TRAVELPAYOUTS_TOKEN')
 DEFAULT_COMMANDS = (
     ('start', 'Запустить бота'),
     ('help', 'Вывести справку'),
