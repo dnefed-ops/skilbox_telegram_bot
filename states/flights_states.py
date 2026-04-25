@@ -5,3 +5,4 @@ class FlightsStates(StatesGroup):
     waiting_for_origin = State()
     waiting_for_destination = State()
     waiting_for_date = State()
+    waiting_for_sort = State()

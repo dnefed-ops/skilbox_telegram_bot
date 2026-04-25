@@ -7,37 +7,38 @@ from config_data import config
 FLIGHTS_API_URL = 'https://api.travelpayouts.com/v1/prices/cheap'
 
 
-def search_flights(origin: str, destination: str, depart_date: str) -> Optional[list[Dict]]:
+def search_flights(origin: str, destination: str, depart_date: str, sort: str =
+                   'cheap') -> Optional[list[Dict]]:
     """
         Ищет самые дешёвые авиабилеты на дату вылета.
         origin, destination – IATA-коды городов (например: MOW, KJA, LED).
         depart_date – строка в формате 'ГГГГ-ММ-ДД' или 'ГГГГ-ММ' (API допускает месяц). [web:26][web:20]
         Возвращает список словарей с данными по билетам или None при ошибке. [web:16]
         """
+    depart_month = depart_date[:7]
+
     params = {
         'origin': origin.upper(),
         'destination': destination.upper(),
-        'depart_date': depart_date,
+        'depart_date': depart_month,
         'token': config.TRAVELPAYOUTS_TOKEN,
         'currency': 'rub',
         'page': 1,
-        'limit': 5,
+        'limit': 30,
     }
 
     try:
         response = requests.get(FLIGHTS_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
+        print(f'DEBUG API ответ: {data}')
 
         if not data.get('success'):
             print(f'Ошибка Travelpayouts: success=False, data={data}')
             return None
 
-        prices = data.get('data', {})
-        # data['data'] – словарь: { 'DEST': { 'DATE': {...}, ... } } [web:26]
         results: List[Dict] = []
-
-        for dest_code, flights_by_date, in prices.items():
+        for dest_code, flights_by_date, in data.get('data', {}).items():
             for _, info in flights_by_date.items():
                 results.append({
                     'price': info.get('price'),
@@ -48,7 +49,8 @@ def search_flights(origin: str, destination: str, depart_date: str) -> Optional[
                     'transfers': info.get('transfers')
                 })
 
-        results.sort(key=lambda x: x.get('price') or 10**9)
+        reverse = (sort == 'expensive')
+        results.sort(key=lambda x: x.get('price') or 10**9, reverse=reverse)
         return results[:5]
 
     except Exception as exc:

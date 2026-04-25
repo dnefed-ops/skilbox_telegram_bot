@@ -1,6 +1,6 @@
 from telebot.types import Message
 from loader import bot
-from keyboards.reply import main_menu
+from keyboards.reply.main_menu import main_menu
 
 
 @bot.message_handler(func=lambda m: m.text == '🌤 Прогноз погоды')

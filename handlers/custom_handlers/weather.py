@@ -4,7 +4,7 @@ from states import WeatherStates
 from loader import bot
 from api.location import get_location
 from api.weather import get_weather
-from keyboards.reply import main_menu
+from keyboards.reply.main_menu import main_menu
 from database.config import db, User, Request
 
 
