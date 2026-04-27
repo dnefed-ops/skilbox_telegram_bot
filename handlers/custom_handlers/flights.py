@@ -3,6 +3,7 @@ from loader import bot
 from states import FlightsStates
 from api.flights import search_flights
 from keyboards.reply import main_menu, flights_menu, flights_sort_menu
+from api.city_search import get_iata_code
 
 
 def start_flight_dialog(message: Message) -> None:
@@ -24,41 +25,42 @@ def menu_flights(message: Message) -> None:
 @bot.message_handler(func=lambda m: bot.get_state(m.from_user.id, m.chat.id) ==
                                     'FlightsStates:waiting_for_origin')
 def process_origin(message: Message) -> None:
-    origin = message.text.strip().upper()
-
-    if len(origin) != 3 or not origin.isalpha():
-        bot.reply_to(
-            message,
-            '❌ IATA-код должен состоять из 3 латинских букв (например: MOW, KJA). '
-            'Попробуйте ещё раз:'
+    city = message.text.strip()
+    iata = get_iata_code(city)
+    if not iata:
+        bot.send_message(
+            message.chat.id,
+            '❌ Город не найден, попробуй ещё раз'
         )
         return
+    bot.send_message(
+        message.chat.id,
+        f'✅ {city} → код аэропорта: {iata}\nТеперь введи город прилёта:'
+    )
+    with bot.retrieve_data(message.from_user.id) as data:
+        data['origin'] = iata
     bot.set_state(message.from_user.id, FlightsStates.waiting_for_destination,
                   message.chat.id)
-    bot.reply_to(
-        message,
-        '✈️ Теперь введите IATA-код города назначения (например: MOW, KJA, LED):'
-    )
-    # Сохраним origin во встроенном хранилище состояний
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['origin'] = origin
 
 
 @bot.message_handler(func=lambda m: bot.get_state(m.from_user.id, m.chat.id) ==
                      'FlightsStates:waiting_for_destination')
 def process_destination(message: Message) -> None:
-    destination = message.text.strip().upper()
-
-    if len(destination) != 3 or not destination.isalpha():
-        bot.reply_to(
-            message,
-            '❌ IATA-код (код аэропорта) должен состоять из 3 латинских букв (например: MOW, KJA). Попробуйте ещё раз:'
+    city = message.text.strip()
+    iata = get_iata_code(city)
+    if not iata:
+        bot.send_message(
+            message.chat.id,
+            '❌ Город не найден, попробуй ещё раз'
         )
         return
-
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['destination'] = destination
-
+    bot.send_message(
+        message.chat.id,
+        f'✅ {city} → код аэропорта: {iata}\n'
+        f'📅 Введите дату вылета в формате ГГГГ-ММ-ДД (например: 2026-05-10):'
+    )
+    with bot.retrieve_data(message.from_user.id) as data:
+        data['origin'] = iata
     bot.set_state(message.from_user.id, FlightsStates.waiting_for_date,
                   message.chat.id)
     bot.reply_to(
