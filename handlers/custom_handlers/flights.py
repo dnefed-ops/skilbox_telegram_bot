@@ -4,6 +4,7 @@ from states import FlightsStates
 from api.flights import search_flights
 from keyboards.reply import main_menu, flights_menu, flights_sort_menu
 from api.city_search import get_iata_code
+from api.airlines import get_airline_name
 
 
 def start_flight_dialog(message: Message) -> None:
@@ -12,7 +13,7 @@ def start_flight_dialog(message: Message) -> None:
                   message.chat.id)
     bot.reply_to(
         message,
-        '✈️ Введите IATA-код города вылета (аэропорта например: MOW, KJA, LED):'
+        '✈️ Введите Город вылета или (IATA-код аэропорта например: MOW, KJA, LED):'
     )
 
 
@@ -35,7 +36,7 @@ def process_origin(message: Message) -> None:
         return
     bot.send_message(
         message.chat.id,
-        f'✅ {city} → код аэропорта: {iata}\nТеперь введи город прилёта:'
+        f'✅ {city} → код аэропорта: {iata}\nТеперь введите город прилёта:'
     )
     with bot.retrieve_data(message.from_user.id) as data:
         data['origin'] = iata
@@ -54,19 +55,16 @@ def process_destination(message: Message) -> None:
             '❌ Город не найден, попробуй ещё раз'
         )
         return
+
+    with bot.retrieve_data(message.from_user.id) as data:
+        data['destination'] = iata
     bot.send_message(
         message.chat.id,
         f'✅ {city} → код аэропорта: {iata}\n'
         f'📅 Введите дату вылета в формате ГГГГ-ММ-ДД (например: 2026-05-10):'
     )
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['origin'] = iata
     bot.set_state(message.from_user.id, FlightsStates.waiting_for_date,
                   message.chat.id)
-    bot.reply_to(
-        message,
-        '📅 Введите дату вылета в формате ГГГГ-ММ-ДД (например: 2026-05-10):'
-    )
 
 
 @bot.message_handler(func=lambda m: bot.get_state(m.from_user.id, m.chat.id) ==
