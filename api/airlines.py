@@ -1,9 +1,9 @@
 import requests
 
 
-_AIRLINES_CACHE: dict[str, str] = {}
+_AIRLINES_CACHE: dict = {}
 
-def load_airlines() -> dict[str, str]:
+def load_airlines() -> dict:
     """Загружает справочник авиакомпаний и кэширует в памяти."""
     global _AIRLINES_CACHE
     if _AIRLINES_CACHE:
@@ -16,11 +16,11 @@ def load_airlines() -> dict[str, str]:
         )
         response.raise_for_status()
         data = response.json()
-        _AIRLINES_CACHE = {
-            item['code']: item.get('name', item['code'])
+        _AIRLINES_CACHE = dict(
+            (item['code'], item.get('name', item['code']))
             for item in data
-            if item.get['code'] and item.get('name')
-        }
+            if item.get('code') and item.get('name')
+        )
     except Exception as exc:
         print(f'Ошибка загрузки справочника авиакомпаний: {exc}')
 

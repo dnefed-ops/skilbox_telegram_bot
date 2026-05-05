@@ -1,10 +1,11 @@
+from datetime import datetime
 from telebot.types import Message
 from loader import bot
 from states import FlightsStates
 from api.flights import search_flights
-from keyboards.reply import main_menu, flights_menu, flights_sort_menu
-from api.city_search import get_iata_code
 from api.airlines import get_airline_name
+from api.city_search import get_iata_code
+from keyboards.reply import main_menu, flights_sort_menu
 
 
 def start_flight_dialog(message: Message) -> None:
@@ -34,12 +35,12 @@ def process_origin(message: Message) -> None:
             '❌ Город не найден, попробуй ещё раз'
         )
         return
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['origin'] = iata
     bot.send_message(
         message.chat.id,
-        f'✅ {city} → код аэропорта: {iata}\nТеперь введите город прилёта:'
+        f'✅ {city} → код аэропорта: {iata}\nВведи город прилёта:'
     )
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['origin'] = iata
     bot.set_state(message.from_user.id, FlightsStates.waiting_for_destination,
                   message.chat.id)
 
@@ -56,7 +57,7 @@ def process_destination(message: Message) -> None:
         )
         return
 
-    with bot.retrieve_data(message.from_user.id) as data:
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['destination'] = iata
     bot.send_message(
         message.chat.id,
@@ -113,6 +114,14 @@ def process_sort(message: Message) -> None:
         destination = data.get('destination')
         depart_date = data.get('depart_date')
 
+    if not origin or not destination:
+        bot.reply_to(
+            message,
+            '❌ Ошибка: данные о маршруте потеряны. Начните заново.'
+        )
+        bot.delete_state(message.from_user.id, message.chat.id)
+        return
+
     bot.reply_to(
         message,
         f'🔍 Ищу билеты {origin} → {destination} на {depart_date[:7]}...'
@@ -131,12 +140,22 @@ def process_sort(message: Message) -> None:
 
     label = '🔻 Самые дешёвые' if sort == 'cheap' else '🔺 Самые дорогие'
     lines = [f'✈️ <b>{label} билеты {origin} → {destination}:</b>\n']
+
     for i, f in enumerate(flights, 1):
+        airline_name = get_airline_name(f['airline'])
+
+        try:
+            dt = datetime.fromisoformat(f['departure_at'])
+            dep_str = dt.strftime('%d.%m.%Y %H:%M')
+        except Exception:
+            dep_str = f['departure_at']
+
+        transfers_str = 'прямой' if f['transfers'] == 0 else f'{f["transfers"]} пересадка(ки)'
         lines.append(
-            f'{i}. 🧾 Цена: <b>{f["price"]} RUB</b>\n'
-            f'   Авиакомпания: <b>{f["airline"]}</b>\n'
-            f'   Вылет: {f["departure_at"]}\n'
-            f'   Пересадок: {f["transfers"]}\n'
+            f'{i}. 💰 <b>{f["price"]:,} ₽</b>\n'
+            f'   ✈️ {airline_name}\n'
+            f'   📅 Вылет: {dep_str}\n'
+            f'   🔄 Рейс: {transfers_str}\n'
         )
 
     text = '\n'.join(lines)

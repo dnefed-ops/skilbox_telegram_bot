@@ -7,6 +7,18 @@ from config_data import config
 FLIGHTS_API_URL = 'https://api.travelpayouts.com/v1/prices/calendar'
 
 
+def build_aviasales_link(origin: str, destination: str, departure_at: str) -> str:
+    """Формирует ссылку на покупку билета в aviasales.ru"""
+    try:
+        from datetime import datetime
+        dt = datetime.fromisoformat(departure_at)
+        date_str = dt.strftime('%d%m') # Формат: ДДММ
+    except Exception:
+        date_str =  '0101'
+
+    return f'https://www.aviasales.ru/search/{origin}{date_str}{destination}1'
+
+
 def search_flights(origin: str, destination: str, depart_date: str, sort: str =
                    'cheap') -> Optional[list[Dict]]:
     """
