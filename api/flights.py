@@ -8,15 +8,28 @@ FLIGHTS_API_URL = 'https://api.travelpayouts.com/v1/prices/calendar'
 
 
 def build_aviasales_link(origin: str, destination: str, departure_at: str) -> str:
-    """Формирует ссылку на покупку билета в aviasales.ru"""
+    """Формирует ссылку на покупку билета через Travelpayouts.
+    За каждую покупку по этой ссылке начисляется вознаграждение.
+    """
     try:
         from datetime import datetime
         dt = datetime.fromisoformat(departure_at)
-        date_str = dt.strftime('%d%m') # Формат: ДДММ
+        date_str = dt.strftime('%Y-%m-%d') # Формат: YYYY-MM-DD
     except Exception:
-        date_str =  '0101'
+        date_str =  ''
 
-    return f'https://www.aviasales.ru/search/{origin}{date_str}{destination}1'
+    marker = config.TRAVELPAYOUTS_MARKER   # Ваш партнерский маркер.
+
+    url = (
+        f'https://search.aviasales.ru/?'
+        f'origin_iata={origin}'
+        f'&destination_iata={destination}'
+        f'&depart_date={date_str}'
+        f'&adults=1'
+        f'&marker={marker}'
+    )
+
+    return url
 
 
 def search_flights(origin: str, destination: str, depart_date: str, sort: str =
@@ -27,7 +40,10 @@ def search_flights(origin: str, destination: str, depart_date: str, sort: str =
         sort — 'cheap' (дешёвые) или 'expensive' (дорогие).
         Возвращает список словарей с данными по билетам или None при ошибке. [web:16]
         """
-    depart_month = depart_date[:7]
+    if not origin or not destination:
+        return None
+
+    depart_month = depart_date[:7] # '2026-05'
 
     params = {
         'origin': origin.upper(),
@@ -42,8 +58,6 @@ def search_flights(origin: str, destination: str, depart_date: str, sort: str =
         response = requests.get(FLIGHTS_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-        print(f'Encoding: {response.headers.get("Content-Encoding")}')
-        print(f'DEBUG API ответ: {data}')
 
         if not data.get('success'):
             print(f'Ошибка Travelpayouts: success=False, data={data}')
@@ -51,6 +65,11 @@ def search_flights(origin: str, destination: str, depart_date: str, sort: str =
 
         results: List[Dict] = []
         for date_key, info, in data.get('data', {}).items():
+
+            # Фильтруем только билеты запрашиваемого месяца.
+            if not date_key.startswith(depart_month):
+                continue
+
             results.append({
                 'price': info.get('price'),
                 'airline': info.get('airline'),

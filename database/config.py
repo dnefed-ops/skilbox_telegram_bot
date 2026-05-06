@@ -29,6 +29,7 @@ class Request(BaseModel):
         db_table = 'Requests'
 
     id = AutoField()
+    request_type = CharField(max_length=100, default='weather')
     request = CharField(max_length=1000)
     answer_request = CharField(max_length=1000)
     user_id = IntegerField()

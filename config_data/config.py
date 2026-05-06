@@ -13,6 +13,7 @@ load_dotenv(env_path)
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 TRAVELPAYOUTS_TOKEN = os.getenv('TRAVELPAYOUTS_TOKEN')
+TRAVELPAYOUTS_MARKER = os.getenv('TRAVELPAYOUTS_MARKER')
 DEFAULT_COMMANDS = (
     ('start', 'Запустить бота'),
     ('help', 'Вывести справку'),

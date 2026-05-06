@@ -1,5 +1,5 @@
 from loader import bot
-import handlers
+import handlers.default_handlers.help
 from utils.set_bot_commands import set_default_commands
 from database.config import initialize_db
 

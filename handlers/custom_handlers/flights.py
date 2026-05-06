@@ -1,8 +1,10 @@
 from datetime import datetime
+from database.config import User, Request
+from peewee import Model
 from telebot.types import Message
 from loader import bot
 from states import FlightsStates
-from api.flights import search_flights
+from api.flights import search_flights, build_aviasales_link
 from api.airlines import get_airline_name
 from api.city_search import get_iata_code
 from keyboards.reply import main_menu, flights_sort_menu
@@ -128,6 +130,7 @@ def process_sort(message: Message) -> None:
     )
 
     flights =  search_flights(origin, destination, depart_date, sort=sort)
+    print(f'DEBUG flights: {flights}')
 
     if not flights:
         bot.send_message(
@@ -139,6 +142,23 @@ def process_sort(message: Message) -> None:
         return
 
     label = '🔻 Самые дешёвые' if sort == 'cheap' else '🔺 Самые дорогие'
+
+    user = User.get_or_none(User.telegram_id == message.from_user.id)
+    print(f'DEBUG user: {user}')
+    if user:
+
+        Request.create(
+            user_id=user.id,
+            request_type='flight',
+            request=f'{origin} → {destination} | {depart_date[:7]}',
+            answer_request=(
+                f'Найдено {len(flights)} билетов | '
+                f'Лучшая цена: {flights[0]["price"]:,} ₽ | '
+                f'{label}'
+            ),
+        )
+
+
     lines = [f'✈️ <b>{label} билеты {origin} → {destination}:</b>\n']
 
     for i, f in enumerate(flights, 1):
@@ -151,11 +171,14 @@ def process_sort(message: Message) -> None:
             dep_str = f['departure_at']
 
         transfers_str = 'прямой' if f['transfers'] == 0 else f'{f["transfers"]} пересадка(ки)'
+        buy_link = build_aviasales_link(origin, destination, f['departure_at'])
+
         lines.append(
             f'{i}. 💰 <b>{f["price"]:,} ₽</b>\n'
             f'   ✈️ {airline_name}\n'
             f'   📅 Вылет: {dep_str}\n'
             f'   🔄 Рейс: {transfers_str}\n'
+            f'   🛒 <a href="{buy_link}">Купить билет</a>\n'
         )
 
     text = '\n'.join(lines)

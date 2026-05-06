@@ -55,11 +55,12 @@ def process_city(message: Message) -> None:
     if user:
         Request.create(
             user_id=user.id,
+            request_type='weather',
             request=city,
             answer_request=(
                 f'{location["name"]}, {location["country"]} | '
                 f'{weather["icon"]} {weather["description"]} | '
-                f'{weather["temperature"]}°C | '
+                f'{round(weather["temperature"])}°C | '
                 f'Ветер: {weather["wind_speed"]} км/ч'
             ),
         )
@@ -68,7 +69,7 @@ def process_city(message: Message) -> None:
         message.chat.id,
         f'🏙 {location["name"]}, {location["country"]}\n\n'
         f'{weather["icon"]} {weather["description"]}\n'
-        f'🌡 Температура: {weather["temperature"]}°C\n'
+        f'🌡 Температура: {round(weather["temperature"])}°C\n'
         f'💨 Ветер: {weather["wind_speed"]} км/ч',
         reply_markup=main_menu()
     )
